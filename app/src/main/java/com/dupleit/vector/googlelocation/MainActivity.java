@@ -1,14 +1,16 @@
 package com.dupleit.vector.googlelocation;
 
-import android.*;
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -19,14 +21,18 @@ import com.google.android.gms.location.LocationServices;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
 
-    private final static int MY_PERMISSION_FINE_LOCATION = 101;
     private final String LOG_TAG = "LaurenceTestApp";
     private TextView txtOutput;
+    private final static int MY_PERMISSION_FINE_LOCATION = 101;
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
-
+    Address address;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -101,11 +107,69 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onLocationChanged(Location location) {
         Log.i(LOG_TAG, location.toString());
-        //txtOutput.setText(location.toString());
+
+        Address loactionAddress;
+        Geocoder geocoder;
+        List<Address> addresses;
+        geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
+
+        try {
+            addresses = geocoder.getFromLocation(location.getLatitude(),location.getLongitude(), 1); // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+
+            loactionAddress = addresses.get(0);
+            if(loactionAddress!=null)
+            {
+
+                String address = loactionAddress.getAddressLine(0);
+                String address1 = loactionAddress.getAddressLine(1);
+                String city = loactionAddress.getLocality();
+                String state = loactionAddress.getAdminArea();
+                String country = loactionAddress.getCountryName();
+                String postalCode = loactionAddress.getPostalCode();
+
+
+                String currentLocation;
+
+                if(!TextUtils.isEmpty(address))
+                {
+                    currentLocation=address;
+
+                    if (!TextUtils.isEmpty(address1))
+                        currentLocation+="\n"+address1;
+
+                    if (!TextUtils.isEmpty(city))
+                    {
+                        currentLocation+="\n"+city;
+
+                        if (!TextUtils.isEmpty(postalCode))
+                            currentLocation+=" - "+postalCode;
+                    }
+                    else
+                    {
+                        if (!TextUtils.isEmpty(postalCode))
+                            currentLocation+="\n"+postalCode;
+                    }
+
+                    if (!TextUtils.isEmpty(state))
+                        currentLocation+="\n"+state;
+
+                    if (!TextUtils.isEmpty(country))
+                        currentLocation+="\n"+country;
+
+                    Log.d("location",""+currentLocation);
+                }
+
+            }
+            else
+                Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         if (mLocationRequest!=null){
-            txtOutput.setText(location.toString());
+            //txtOutput.setText(location.toString());
+            txtOutput.setText(""+location.getLatitude()+"--"+location.getLongitude());
+
         }
     }
-
-
 }
